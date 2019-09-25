@@ -1,0 +1,226 @@
+import java.util.HashMap;
+
+public class KDNode {
+    public long nodeID;
+    public boolean isX;
+    public KDNode lessChild;
+    public KDNode greaterChild;
+
+    public KDNode(long id, boolean x, KDNode less, KDNode greater) {
+        nodeID = id;
+        isX = x;
+        lessChild = less;
+        greaterChild = greater;
+    }
+
+    public KDNode nearestHelper(double x, double y, KDNode champNode, GraphDB g, KDNode parent){
+        double parentX = Double.POSITIVE_INFINITY;
+        double parentY = Double.POSITIVE_INFINITY;
+
+        if (parent != null){
+             parentX = GraphDB.projectToX(g.nodes.get(parent.nodeID).lon, g.nodes.get(parent.nodeID).lat);
+             parentY = GraphDB.projectToY(g.nodes.get(parent.nodeID).lon, g.nodes.get(parent.nodeID).lat);
+        }
+
+
+        double thisX = GraphDB.projectToX(g.nodes.get(this.nodeID).lon, g.nodes.get(this.nodeID).lat);
+        double thisY = GraphDB.projectToY(g.nodes.get(this.nodeID).lon, g.nodes.get(this.nodeID).lat);
+
+        double champX = GraphDB.projectToX(g.nodes.get(champNode.nodeID).lon, g.nodes.get(champNode.nodeID).lat);
+        double champY = GraphDB.projectToY(g.nodes.get(champNode.nodeID).lon, g.nodes.get(champNode.nodeID).lat);
+
+        double distThis = euclidean(thisX, x, thisY, y);
+        double distChamp = euclidean(champX, x, champY, y);
+
+        if (distThis < distChamp){
+            champNode = this;
+            champX = thisX;
+            champY = thisY;
+            distChamp = euclidean(champX, x, champY, y);
+        }
+
+        if (distChamp == 0){
+            return champNode;
+        }
+        if (this.isX){
+            if (x < thisX){
+                double dist = 0;
+                if (lessChild != null) {
+                    KDNode lessResult = this.lessChild.nearestHelper(x, y, champNode, g, this);
+
+                    if (!(champNode.nodeID == lessResult.nodeID)) {
+                        champNode = lessResult;
+                        champX = GraphDB.projectToX(g.nodes.get(lessResult.nodeID).lon, g.nodes.get(lessResult.nodeID).lat);
+                        champY = GraphDB.projectToY(g.nodes.get(lessResult.nodeID).lon, g.nodes.get(lessResult.nodeID).lat);
+                    }
+                    // check if better could be in greater side
+                    //find region in greater
+
+                    if (parentY == Double.POSITIVE_INFINITY) { // for first iteration
+                        dist = euclidean(thisX, x, y, y);
+                    } else {
+                        if (parentY > thisY) {
+                            if (y >= parentY) {
+                                dist = euclidean(thisX, x, parentY, y);
+                            }
+                        } else if (parentY < thisY) {
+                            if (y <= parentY) {
+                                dist = euclidean(thisX, x, parentY, y);
+                            }
+                        } else {
+                            dist = euclidean(thisX, x, y, y);
+                        }
+
+                    }
+                }
+                if (greaterChild == null){
+                    return champNode;
+                }
+                if (dist < euclidean(champX, x, champY, y)){
+                    KDNode greatResult = this.greaterChild.nearestHelper(x, y, champNode, g, this);
+                    if (!(champNode.nodeID == greatResult.nodeID)) {
+                        champNode = greatResult;
+                        return champNode;
+//                        champX = GraphDB.projectToX(g.nodes.get(greatResult.nodeID).lon, g.nodes.get(greatResult.nodeID).lat);
+//                        champY = GraphDB.projectToY(g.nodes.get(greatResult.nodeID).lon, g.nodes.get(greatResult.nodeID).lat);
+                    }
+                }
+
+            } else {
+                double dist = 0;
+                if (greaterChild != null) {
+                    KDNode greatResult = this.greaterChild.nearestHelper(x, y, champNode, g, this);
+                    if (!(champNode.nodeID == greatResult.nodeID)) {
+                        champNode = greatResult;
+                        champX = GraphDB.projectToX(g.nodes.get(greatResult.nodeID).lon, g.nodes.get(greatResult.nodeID).lat);
+                        champY = GraphDB.projectToY(g.nodes.get(greatResult.nodeID).lon, g.nodes.get(greatResult.nodeID).lat);
+                    }
+                    // check if better could be in greater side
+                    //find region in greater
+
+                    if (parentY == Double.POSITIVE_INFINITY) { // for first iteration
+                        dist = euclidean(thisX, x, y, y);
+                    } else {
+                        if (parentY > thisY) {
+                            if (y >= parentY) {
+                                dist = euclidean(thisX, x, parentY, y);
+                            }
+                        } else if (parentY < thisY) {
+                            if (y <= parentY) {
+                                dist = euclidean(thisX, x, parentY, y);
+                            }
+                        } else {
+                            dist = euclidean(thisX, x, y, y);
+                        }
+
+                    }
+                }
+                if (lessChild == null){
+                    return champNode;
+                }
+                if (dist < euclidean(champX, x, champY, y)) {
+                    KDNode lessResult = this.lessChild.nearestHelper(x, y, champNode, g, this);
+                    if (!(champNode.nodeID == lessResult.nodeID)) {
+                        champNode = lessResult;
+                        return champNode;
+//                        champX = GraphDB.projectToX(g.nodes.get(lessResult.nodeID).lon, g.nodes.get(lessResult.nodeID).lat);
+//                        champY = GraphDB.projectToY(g.nodes.get(lessResult.nodeID).lon, g.nodes.get(lessResult.nodeID).lat);
+                    }
+                }
+            }
+            } else {
+
+            if (y < thisY) {
+                double dist = 0;
+                if (lessChild != null) {
+                    KDNode lessResult = this.lessChild.nearestHelper(x, y, champNode, g, this);
+
+                    if (!(champNode.nodeID == lessResult.nodeID)) {
+                        champNode = lessResult;
+                        champX = GraphDB.projectToX(g.nodes.get(lessResult.nodeID).lon, g.nodes.get(lessResult.nodeID).lat);
+                        champY = GraphDB.projectToY(g.nodes.get(lessResult.nodeID).lon, g.nodes.get(lessResult.nodeID).lat);
+                    }
+                    // check if better could be in greater side
+                    //find region in greater
+                    if (parentX == Double.POSITIVE_INFINITY) { // for first iteration
+                        dist = euclidean(x, x, thisY, y);
+                    } else {
+                        if (parentX > thisX) {
+                            if (x >= parentX) {
+                                dist = euclidean(parentX, x, thisY, y);
+                            }
+                        } else if (parentX < thisX) {
+                            if (x <= parentX) {
+                                dist = euclidean(parentX, x, thisY, y);
+                            }
+                        } else {
+                            dist = euclidean(x, x, thisY, y);
+                        }
+
+                    }
+                }
+                if (greaterChild == null){
+                    return champNode;
+                }
+                if (dist < euclidean(champX, x, champY, y)) {
+                    KDNode greatResult = this.greaterChild.nearestHelper(x, y, champNode, g, this);
+                    if (!(champNode.nodeID == greatResult.nodeID)) {
+                        champNode = greatResult;
+                        return champNode;
+//                        champX = GraphDB.projectToX(g.nodes.get(greatResult.nodeID).lon, g.nodes.get(greatResult.nodeID).lat);
+//                        champY = GraphDB.projectToY(g.nodes.get(greatResult.nodeID).lon, g.nodes.get(greatResult.nodeID).lat);
+                   }
+                }
+
+            } else {
+
+                double dist = 0;
+                if (greaterChild != null) {
+                    KDNode greatResult = this.greaterChild.nearestHelper(x, y, champNode, g, this);
+
+                    if (!(champNode.nodeID == greatResult.nodeID)) {
+                        champNode = greatResult;
+                        champX = GraphDB.projectToX(g.nodes.get(greatResult.nodeID).lon, g.nodes.get(greatResult.nodeID).lat);
+                        champY = GraphDB.projectToY(g.nodes.get(greatResult.nodeID).lon, g.nodes.get(greatResult.nodeID).lat);
+                    }
+                    // check if better could be in greater side
+                    //find region in greater
+                    if (parentX == Double.POSITIVE_INFINITY) { // for first iteration
+                        dist = euclidean(x, x, thisY, y);
+                    } else {
+                        if (parentX > thisX) {
+                            if (x >= parentX) {
+                                dist = euclidean(parentX, x, thisY, y);
+                            }
+                        } else if (parentX < thisX) {
+                            if (x <= parentX) {
+                                dist = euclidean(parentX, x, thisY, y);
+                            }
+                        } else {
+                            dist = euclidean(x, x, thisY, y);
+                        }
+
+                    }
+                }
+                if (lessChild == null){
+                    return champNode;
+                }
+                if (dist < euclidean(champX, x, champY, y)) {
+                    KDNode lessResult = this.lessChild.nearestHelper(x, y, champNode, g, this);
+                    if (!(champNode.nodeID == lessResult.nodeID)) {
+                        champNode = lessResult;
+                        return champNode;
+//                        champX = GraphDB.projectToX(g.nodes.get(lessResult.nodeID).lon, g.nodes.get(lessResult.nodeID).lat);
+//                        champY = GraphDB.projectToY(g.nodes.get(lessResult.nodeID).lon, g.nodes.get(lessResult.nodeID).lat);
+                    }
+                }
+            }
+        }
+        return champNode;
+    }
+
+    static double euclidean(double x1, double x2, double y1, double y2) {
+        return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+    }
+
+}
